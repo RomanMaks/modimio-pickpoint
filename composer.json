@@ -1,7 +1,7 @@
 {
-    "name": "yiisoft/yii2-app-basic",
-    "description": "Yii 2 Basic Project Template",
-    "keywords": ["yii2", "framework", "basic", "project template"],
+    "name": "modimio/pickpoint",
+    "description": "Modimio PickPoint",
+    "keywords": ["pickpoint", "api", "modimio"],
     "homepage": "http://www.yiiframework.com/",
     "type": "project",
     "license": "BSD-3-Clause",
@@ -17,7 +17,9 @@
         "php": ">=7.2.0",
         "yiisoft/yii2": "~2.0.14",
         "yiisoft/yii2-bootstrap": "~2.0.0",
-        "yiisoft/yii2-swiftmailer": "~2.0.0 || ~2.1.0"
+        "yiisoft/yii2-swiftmailer": "~2.0.0 || ~2.1.0",
+        "yiisoft/yii2-httpclient": "*",
+        "ext-json": "*"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
