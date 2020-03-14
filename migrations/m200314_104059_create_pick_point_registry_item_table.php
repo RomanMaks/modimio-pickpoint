@@ -16,7 +16,7 @@ class m200314_104059_create_pick_point_registry_item_table extends Migration
             'id' => $this->primaryKey(),
             'departure_track_code' => $this->string()->notNull(),
             'status' => $this->integer()->notNull(),
-            'pick_point_registry_id' => $this->integer()->notNull(),
+            'registry_id' => $this->integer()->notNull(),
             'order_id' => $this->integer()->notNull(),
             'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
             'updated_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
@@ -31,7 +31,7 @@ class m200314_104059_create_pick_point_registry_item_table extends Migration
         $this->createIndex(
             'idx-pick_point_registry_item-registry_id',
             'pick_point_registry_item',
-            'pick_point_registry_id'
+            'registry_id'
         );
 
         $this->createIndex(

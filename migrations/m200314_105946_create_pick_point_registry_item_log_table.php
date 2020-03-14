@@ -13,11 +13,17 @@ class m200314_105946_create_pick_point_registry_item_log_table extends Migration
     {
         $this->createTable('pick_point_registry_item_log', [
             'id' => $this->primaryKey(),
-            'pick_point_registry_id' => $this->integer()->notNull(),
+            'registry_item_id' => $this->integer()->notNull(),
             'event_type' => $this->integer()->notNull(),
             'message' => $this->string(),
             'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
         ]);
+
+        $this->createIndex(
+            'idx-pick_point_registry_item_log-registry_item_id',
+            'pick_point_registry_item_log',
+            'registry_item_id'
+        );
 
         $this->createIndex(
             'idx-pick_point_registry_item_log-event_type',
