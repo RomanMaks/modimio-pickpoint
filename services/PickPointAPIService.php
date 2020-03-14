@@ -204,6 +204,6 @@ class PickPointAPIService
             throw new \Exception($response->data['ErrorMessage']);
         }
 
-        return $response->$response->data['SessionId'];
+        return $response->data['SessionId'];
     }
 }
