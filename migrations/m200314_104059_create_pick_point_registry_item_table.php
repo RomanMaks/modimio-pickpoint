@@ -21,6 +21,24 @@ class m200314_104059_create_pick_point_registry_item_table extends Migration
             'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
             'updated_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
         ]);
+
+        $this->createIndex(
+            'idx-pick_point_registry_item-status',
+            'pick_point_registry_item',
+            'status'
+        );
+
+        $this->createIndex(
+            'idx-pick_point_registry_item-registry_id',
+            'pick_point_registry_item',
+            'pick_point_registry_id'
+        );
+
+        $this->createIndex(
+            'idx-pick_point_registry_item-order_id',
+            'pick_point_registry_item',
+            'order_id'
+        );
     }
 
     public function down()
