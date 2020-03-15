@@ -2,19 +2,19 @@
 
 namespace app\controllers\web;
 
-use app\controllers\web\actions\order\Create;
+use app\controllers\web\actions\registry\Create;
 
 /**
- * Контроллер для работы с заказами
+ * Контроллер для работы с реестрами
  *
- * Class OrderController
+ * Class RegistryController
  * @package app\controllers\web
  */
-class OrderController extends WebController
+class RegistryController extends WebController
 {
     public function getViewPath()
     {
-        return '@app/views/order';
+        return '@app/views/registry';
     }
 
     public function actions()

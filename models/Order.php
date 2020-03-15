@@ -25,6 +25,7 @@ use yii\db\ActiveRecord;
  *
  * @property PickupPoint $pickupPoint Постомат
  * @property OrderBox[] $orderBoxes Коробки заказа
+ * @property PickPointRegistryItem $registryItem Запись в реестре
  */
 class Order extends ActiveRecord
 {
@@ -102,5 +103,15 @@ class Order extends ActiveRecord
     public function getOrderBoxes(): ActiveQuery
     {
         return $this->hasMany(OrderBox::class, ['order_id' => 'id']);
+    }
+
+    /**
+     * Запись в реестре
+     *
+     * @return ActiveQuery
+     */
+    public function getRegistryItem(): ActiveQuery
+    {
+        return $this->hasOne(PickPointRegistryItem::class, ['order_id' => 'id']);
     }
 }

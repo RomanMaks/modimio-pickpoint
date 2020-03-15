@@ -2,13 +2,13 @@
 
 /* @var $this yii\web\View */
 
-$this->title = 'Добавить заказ';
+$this->title = 'Создать реестр';
 ?>
 <div class="site-index">
     <div class="body-content">
 
         <div class="row">
-            Здесь некая форма для добавления заказа
+            Здесь наверное некая кнопка для создания реестра
         </div>
 
     </div>
