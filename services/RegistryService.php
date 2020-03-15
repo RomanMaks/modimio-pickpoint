@@ -17,23 +17,21 @@ use app\models\PickPointRegistryItemLog;
 class RegistryService
 {
     /**
-     * Создание открытого реестра за текущий день
+     * Создание или обновление открытого реестра за текущий день
      *
      * @throws \Exception
      */
-    public function create()
+    public function createOrUpdate()
     {
-        $registry = PickPointRegistry::findOne(['created_at' => date('Y-m-d')]);
-
-        if (!empty($registry)) {
-            $message = sprintf('На текущий день уже существует открытый реестр с id = %d.', $registry->id);
-            \Yii::info($message);
-            throw new \Exception($message);
-        }
-
-        $registry = new PickPointRegistry([
+        $registry = PickPointRegistry::findOne([
+            'created_at' => date('Y-m-d'),
             'status' => PickPointRegistry::STATUSES['OPEN']
         ]);
+
+        if (empty($registry)) {
+            $registry = new PickPointRegistry();
+            $registry->status = PickPointRegistry::STATUSES['OPEN'];
+        }
 
         $registry->save();
         $registry->refresh();
@@ -73,6 +71,33 @@ class RegistryService
             }
 
             $log->save();
+        }
+    }
+
+    /**
+     * Удалить выбранные записи реестра
+     *
+     * @param array $itemIds
+     */
+    public function deleteItems(array $itemIds)
+    {
+        $items = PickPointRegistryItem::findAll(['id' => $itemIds]);
+
+        /** @var PickPointRegistryItem $item */
+        foreach ($items as $item) {
+            try {
+                $item->delete();
+            } catch (\Throwable $exception) {
+                $log = new PickPointRegistryItemLog();
+                $log->registry_item_id = $item->id;
+                $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
+                $log->message = sprintf(
+                    'При удалении записи реестра %d произошла ошибка. Ошибка %s',
+                    $item->id,
+                    $exception->getMessage()
+                );
+                $log->save();
+            }
         }
     }
 }

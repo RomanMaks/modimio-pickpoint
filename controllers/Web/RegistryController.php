@@ -1,14 +1,15 @@
 <?php
 
-namespace app\controllers\web;
+namespace app\controllers\Web;
 
-use app\controllers\web\actions\registry\Create;
+use app\controllers\Web\Actions\Registry\Create;
+use app\controllers\Web\Actions\Registry\Registration;
 
 /**
  * Контроллер для работы с реестрами
  *
  * Class RegistryController
- * @package app\controllers\web
+ * @package app\controllers\Web
  */
 class RegistryController extends WebController
 {
@@ -21,6 +22,7 @@ class RegistryController extends WebController
     {
         return [
             'create' => Create::class,
+            'registration' => Registration::class
         ];
     }
 }

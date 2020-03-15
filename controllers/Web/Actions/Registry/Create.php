@@ -1,22 +1,20 @@
 <?php
 
-namespace app\controllers\web\actions\registry;
+namespace app\controllers\Web\Actions\Registry;
 
 use app\services\RegistryService;
 use yii\base\Action;
-use yii\web\ServerErrorHttpException;
 
 /**
  * Действие для создания нового реестра
  *
  * Class Create
- * @package app\controllers\web\actions\registry
+ * @package app\controllers\Web\Actions\Registry
  */
 class Create extends Action
 {
     /**
      * @return string
-     * @throws ServerErrorHttpException
      */
     public function run()
     {
@@ -25,11 +23,11 @@ class Create extends Action
         $errors = [];
 
         try {
-            $service->create();
+            $service->createOrUpdate();
         } catch (\Throwable $exception) {
             $errors[] = $exception->getMessage();
         }
 
-        return $this->controller->render('create', ['errors' => $errors]);
+        return $this->controller->render('index', ['errors' => $errors]);
     }
 }

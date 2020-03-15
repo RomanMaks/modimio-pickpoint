@@ -1,12 +1,12 @@
 <?php
 
-namespace app\controllers\web;
+namespace app\controllers\Web;
 
 use yii\web\Controller;
 
 /**
  * Class WebController
- * @package app\controllers\web
+ * @package app\controllers\Web
  */
 class WebController extends Controller
 {

@@ -53,7 +53,7 @@ $config = [
                 'normalizeTrailingSlash' => true,
             ],
             'rules' => [
-                '<controller>/<action>' => 'web/<controller>/<action>',
+                '<controller>/<action>' => 'Web/<controller>/<action>',
             ],
         ],
     ],
