@@ -43,14 +43,19 @@ $config = [
             ],
         ],
         'db' => $db,
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
+            'enableStrictParsing' => false,
+            'normalizer' => [
+                'class' => \yii\web\UrlNormalizer::class,
+                'collapseSlashes' => true,
+                'normalizeTrailingSlash' => true,
+            ],
             'rules' => [
+                '<controller>/<action>' => 'web/<controller>/<action>',
             ],
         ],
-        */
     ],
     'params' => $params,
 ];
