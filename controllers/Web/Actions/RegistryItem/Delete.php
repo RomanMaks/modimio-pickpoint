@@ -18,7 +18,7 @@ class Delete extends Action
      */
     public function run()
     {
-        $ids = [1, 2, 3];
+        $ids = \Yii::$app->request->post('ids');
 
         $service = new RegistryService();
 

@@ -100,4 +100,9 @@ class RegistryService
             }
         }
     }
+
+    public function registration(PickPointRegistry $registry)
+    {
+
+    }
 }
