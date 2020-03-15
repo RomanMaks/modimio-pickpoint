@@ -14,7 +14,7 @@ class m200314_104059_create_pick_point_registry_item_table extends Migration
     {
         $this->createTable('pick_point_registry_item', [
             'id' => $this->primaryKey(),
-            'departure_track_code' => $this->string()->notNull(),
+            'departure_track_code' => $this->string(),
             'status' => $this->integer()->notNull(),
             'registry_id' => $this->integer()->notNull(),
             'order_id' => $this->integer()->notNull(),

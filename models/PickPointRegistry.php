@@ -27,8 +27,8 @@ class PickPointRegistry extends ActiveRecord
 {
     /** @var array Статусы */
     public const STATUSES = [
-        'OPEN' => 1,
-        'READY_FOR_SHIPMENT' => 2,
+        'OPEN' => 1,               // Открыт
+        'READY_FOR_SHIPMENT' => 2, // Готов к отгрузке
     ];
 
     /**
@@ -49,7 +49,7 @@ class PickPointRegistry extends ActiveRecord
         return [
             ['label_print_link', 'string', 'max' => 256],
             [['registry_number', 'status'], 'integer'],
-            [['registry_number', 'status'], 'required'],
+            ['status', 'required'],
             ['status', 'in', 'range' => array_values(self::STATUSES)],
             [['created_at', 'updated_at'], 'safe'],
         ];

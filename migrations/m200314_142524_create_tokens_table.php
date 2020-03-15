@@ -13,17 +13,10 @@ class m200314_142524_create_tokens_table extends Migration
     {
         $this->createTable('tokens', [
             'id' => $this->primaryKey(),
-            'service' => $this->string()->notNull(),
+            'service' => $this->string()->unique()->notNull(),
             'session_id' => $this->string()->notNull(),
             'issued_at' => $this->timestamp()->notNull(),
         ]);
-
-        $this->createIndex(
-            'uidx-tokens-service-session_id',
-            'tokens',
-            ['service', 'session_id'],
-            true
-        );
     }
 
     public function down()

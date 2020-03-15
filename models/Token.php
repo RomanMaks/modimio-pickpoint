@@ -34,7 +34,8 @@ class Token extends ActiveRecord
     {
         return [
             [['service', 'session_id'], 'string'],
-            [['service', 'session_id'], 'required'],
+            [['service', 'session_id', 'issued_at'], 'required'],
+            ['service', 'unique'],
             ['issued_at', 'datetime', 'format' => 'php:Y-m-d H:i:s']
         ];
     }

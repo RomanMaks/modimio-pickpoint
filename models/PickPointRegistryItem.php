@@ -54,7 +54,7 @@ class PickPointRegistryItem extends ActiveRecord
         return [
             ['departure_track_code', 'string', 'max' => 256],
             [['status', 'registry_id', 'order_id'], 'integer'],
-            [['departure_track_code', 'status', 'registry_id', 'order_id'], 'required'],
+            [['status', 'registry_id', 'order_id'], 'required'],
             ['status', 'in', 'range' => array_values(self::STATUSES)],
             [['created_at', 'updated_at'], 'safe'],
         ];

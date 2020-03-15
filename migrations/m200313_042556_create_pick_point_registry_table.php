@@ -14,7 +14,7 @@ class m200313_042556_create_pick_point_registry_table extends Migration
     {
         $this->createTable('pick_point_registry', [
             'id' => $this->primaryKey(),
-            'registry_number' => $this->integer()->notNull(),
+            'registry_number' => $this->integer(),
             'status' => $this->integer()->notNull(),
             'label_print_link' => $this->string(),
             'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
