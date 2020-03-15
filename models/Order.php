@@ -114,4 +114,14 @@ class Order extends ActiveRecord
     {
         return $this->hasOne(PickPointRegistryItem::class, ['order_id' => 'id']);
     }
+
+    /**
+     * ФИО
+     *
+     * @return string
+     */
+    public function fullName(): string
+    {
+        return implode(' ', [$this->user_surname, $this->user_name, $this->user_patronymic]);
+    }
 }

@@ -206,4 +206,31 @@ class PickPointAPIService
 
         return $response->data['SessionId'];
     }
+
+    /**
+     * Регистрация отправления
+     *
+     * @param $sending
+     *
+     * @return array
+     *
+     * @throws \Exception
+     */
+    public function shipmentRegistration($sending): array
+    {
+        $content = [
+            'SessionId' => $this->sessionId,
+            'Sendings' => [
+                $sending,
+            ]
+        ];
+
+        $response = $this->sendRequest('/login', $content);
+
+        if (!empty($response->data['ErrorMessage'])) {
+            throw new \Exception($response->data['ErrorMessage']);
+        }
+
+        return array_shift($response->data['CreatedSendings']);
+    }
 }
