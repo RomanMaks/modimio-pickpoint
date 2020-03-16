@@ -9,7 +9,8 @@ return [
         'postomat' => '4403-002',
     ],
     'senderCity' => [
-        'cityName' => 'Кострома',
-        'regionName' => 'Костромской'
+        'city' => 'Кострома',
+        'region' => 'Костромской'
     ],
+    'fileNameMask' => 'labels_%REGISTRY_NUMBER%_%DATETIME%.pdf',
 ];

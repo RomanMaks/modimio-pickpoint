@@ -33,6 +33,8 @@ class PickPointAPIService
         ]);
 
         $token = Token::findOne(['service' => self::class]);
+
+        // ЕСЛИ токен пустой ИЛИ текущее время больше времени жизни токена ТО перевыпустить
         if (empty($token) ||
             (new \DateTime) > (new \DateTime($token->issued_at))->add(new \DateInterval('P1D'))) {
             $this->refresh();
@@ -129,7 +131,7 @@ class PickPointAPIService
      *
      * @throws \Exception
      */
-    public function shipmentRegistration(array $sending): array
+    public function createShipment(array $sending): array
     {
         $content = [
             'SessionId' => $this->sessionId,
@@ -168,5 +170,30 @@ class PickPointAPIService
         }
 
         return array_shift($response->data['Numbers']);
+    }
+
+    /**
+     * Формирование этикеток в pdf
+     *
+     * @param array $invoices
+     *
+     * @return string
+     *
+     * @throws \Exception
+     */
+    public function makelabel(array $invoices): string
+    {
+        $content = [
+            'SessionId' => $this->sessionId,
+            'Invoices' => $invoices,
+        ];
+
+        $response = $this->sendRequest('/makereestrnumber', $content);
+
+        if ('Error' === mb_substr($response->content, 0, 5) || '%PDF' !== mb_substr($response->content, 0, 4)) {
+            throw new \Exception('Произошла ошибка при создании этикетки');
+        }
+
+        return $response->content;
     }
 }

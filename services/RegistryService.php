@@ -20,6 +20,9 @@ class RegistryService
     /** @var PickPointAPIService $pickPoint */
     protected $pickPoint;
 
+    /** @var string Путь до папки где хранятся PDF файлы для этикеток */
+    protected const PATH_TO_DIRECTORY = __DIR__ . '/../data/';
+
     /**
      * RegistryService constructor.
      * @throws \Exception
@@ -98,19 +101,23 @@ class RegistryService
 
         /** @var PickPointRegistryItem $item */
         foreach ($items as $item) {
+            $log = new PickPointRegistryItemLog();
+            $log->registry_item_id = $item->id;
+
             try {
                 $item->delete();
+                $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['INFO'];
+                $log->message = sprintf('Удаление записи реестра %d.', $item->id);
             } catch (\Throwable $exception) {
-                $log = new PickPointRegistryItemLog();
-                $log->registry_item_id = $item->id;
                 $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
                 $log->message = sprintf(
                     'При удалении записи реестра %d произошла ошибка. Ошибка %s',
                     $item->id,
                     $exception->getMessage()
                 );
-                $log->save();
             }
+
+            $log->save();
         }
     }
 
@@ -118,35 +125,45 @@ class RegistryService
      * Регистрация реестра в PickPoint
      *
      * @param PickPointRegistry $registry
+     *
+     * @throws \Exception
      */
     public function registration(PickPointRegistry $registry)
     {
-//-регистрация каждой записи реестра;
-//-формирование реестра в ЛК PickPoint (если все записи реестра успешно зарегистрированы);
-//-сохранение номера реестра и ссылки на печать этикеток;
-
-
+        // Регистрация каждой записи реестра
         foreach ($registry->items as $item) {
             $this->shipmentRegistration($item);
         }
 
+        // Проверяем все ли записи были успешно зарегистированы
+        // if () {}
+
+        // Формирование этикеток
+        $pathToLinks = $this->labeling($registry);
+
         $sending = [
-            'CityName' => '<Название города передачи отправления в PickPoint>',
-            'RegionName' => '<Название региона передачи отправления в PickPoint >',
-            'DeliveryPoint' => '<Пункт сдачи, номер постамата>',
+            'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города передачи отправления в PickPoint
+            'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона передачи отправления в PickPoint
+            'DeliveryPoint' => \Yii::$app->params['pickpoint']['out']['postomat'], // Пункт сдачи, номер постамата
             'ReestrNumber' => '<Номер документа Клиента>',
             'Invoices' => $registry->getItems()->select('departure_track_code')->column(),
         ];
 
         try {
+            // Формирование реестра в ЛК PickPoint
             $registry->registry_number = $this->pickPoint->createRegistry($sending);
             $registry->status = PickPointRegistry::STATUSES['READY_FOR_SHIPMENT'];
+            $registry->label_print_link = $pathToLinks;
+
+            // Сохранение номера реестра и ссылки на печать этикеток
+            $registry->save();
         } catch (\Throwable $exception) {
             $message = sprintf(
-                'При формировании отправления %d произошла ошибка: %s',
+                'При формировании реестра %d произошла ошибка: %s',
                 $registry->id,
                 $exception->getMessage()
             );
+            \Yii::error($message);
         }
     }
 
@@ -191,8 +208,8 @@ class RegistryService
                 'DeliveryFee' => $item->order->delivery_price, // Сумма сервисного сбора с НДС
                 'DeliveryMode' => 1, // Режим доставки (значения : 1, если Standard и 2, если Priority)
                 'SenderCity' => [
-                    'CityName' => \Yii::$app->params['pickpoint']['senderCity']['cityName'], // Название города сдачи отправления
-                    'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['regionName'], // Название региона сдачи отправления
+                    'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города сдачи отправления
+                    'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона сдачи отправления
                 ],
                 'Places' => array_map(
                     function (OrderBox $box) {
@@ -222,7 +239,7 @@ class RegistryService
         ];
 
         try {
-            $createdShipment = $this->pickPoint->shipmentRegistration($sending);
+            $createdShipment = $this->pickPoint->createShipment($sending);
             $item->departure_track_code = $createdShipment['InvoiceNumber'];
             $item->status = PickPointRegistryItem::STATUSES['REGISTERED'];
         } catch (\Throwable $exception) {
@@ -239,5 +256,36 @@ class RegistryService
         $log->save();
         $item->save();
         $item->refresh();
+    }
+
+    /**
+     * Формирование этикеток
+     *
+     * @param PickPointRegistry $registry
+     *
+     * @return string
+     *
+     * @throws \Exception
+     */
+    protected function labeling(PickPointRegistry $registry): string
+    {
+        $invoices = array_map(
+            function (PickPointRegistryItem $item) { return $item->id; },
+            $registry->items
+        );
+
+        $file = $this->pickPoint->makelabel($invoices);
+
+        $filename = str_replace(
+            ['%DOC_NUMBER%', '%DATETIME%'],
+            [$registry->id, date('YmdHis')],
+            \Yii::$app->params['pickpoint']['fileNameMask']
+        );
+
+        if (false === file_put_contents(self::PATH_TO_DIRECTORY . $filename, $file)) {
+            throw new \Exception('Неудалось сохранить pdf файл с этикетками.');
+        }
+
+        return $filename;
     }
 }
