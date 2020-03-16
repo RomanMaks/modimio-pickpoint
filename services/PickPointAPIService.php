@@ -210,13 +210,13 @@ class PickPointAPIService
     /**
      * Регистрация отправления
      *
-     * @param $sending
+     * @param array $sending
      *
      * @return array
      *
      * @throws \Exception
      */
-    public function shipmentRegistration($sending): array
+    public function shipmentRegistration(array $sending): array
     {
         $content = [
             'SessionId' => $this->sessionId,
@@ -232,5 +232,28 @@ class PickPointAPIService
         }
 
         return array_shift($response->data['CreatedSendings']);
+    }
+
+    /**
+     * Формирование реестра
+     *
+     * @param array $sending
+     *
+     * @return mixed
+     *
+     * @throws \Exception
+     */
+    public function createRegistry(array $sending)
+    {
+        $response = $this->sendRequest(
+            '/makereestrnumber',
+            array_merge(['SessionId' => $this->sessionId], $sending)
+        );
+
+        if (!empty($response->data['ErrorMessage'])) {
+            throw new \Exception($response->data['ErrorMessage']);
+        }
+
+        return array_shift($response->data['Numbers']);
     }
 }

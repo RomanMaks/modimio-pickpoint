@@ -4,6 +4,7 @@
 namespace app\services;
 
 use app\models\Order;
+use app\models\OrderBox;
 use app\models\PickPointRegistry;
 use app\models\PickPointRegistryItem;
 use app\models\PickPointRegistryItemLog;
@@ -54,31 +55,31 @@ class RegistryService
 
         /** @var Order $order */
         foreach ($orders as $order) {
-            $registryItem = new PickPointRegistryItem([
+            $item = new PickPointRegistryItem([
                 'status' => PickPointRegistryItem::STATUSES['CREATE'],
                 'registry_id' => $registry->id,
                 'order_id' => $order->id,
             ]);
-            $result = $registryItem->save();
-            $registryItem->refresh();
+            $result = $item->save();
+            $item->refresh();
 
             $log = new PickPointRegistryItemLog();
-            $log->registry_item_id = $registryItem->id;
+            $log->registry_item_id = $item->id;
 
             if ($result) {
                 $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['INFO'];
                 $log->message = sprintf(
                     'Успешно создана запись реестра %d для заказа %d.',
-                    $registryItem->id,
+                    $item->id,
                     $order->id
                 );
             } else {
                 $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
                 $log->message = sprintf(
                     'При создании записи реестра %d произошла ошибка, неудалось связать с заказом %d. Ошибка %s',
-                    $registryItem->id,
+                    $item->id,
                     $order->id,
-                    implode(', ', $registryItem->firstErrors)
+                    implode(', ', $item->firstErrors)
                 );
             }
 
@@ -117,18 +118,35 @@ class RegistryService
      * Регистрация реестра в PickPoint
      *
      * @param PickPointRegistry $registry
-     *
-     * @throws \Exception
      */
     public function registration(PickPointRegistry $registry)
     {
 //-регистрация каждой записи реестра;
 //-формирование реестра в ЛК PickPoint (если все записи реестра успешно зарегистрированы);
 //-сохранение номера реестра и ссылки на печать этикеток;
-//-выставление реестру статуса “Готов к отгрузке”.
 
-        foreach ($registry->registryItems as $item) {
+
+        foreach ($registry->items as $item) {
             $this->shipmentRegistration($item);
+        }
+
+        $sending = [
+            'CityName' => '<Название города передачи отправления в PickPoint>',
+            'RegionName' => '<Название региона передачи отправления в PickPoint >',
+            'DeliveryPoint' => '<Пункт сдачи, номер постамата>',
+            'ReestrNumber' => '<Номер документа Клиента>',
+            'Invoices' => $registry->getItems()->select('departure_track_code')->column(),
+        ];
+
+        try {
+            $registry->registry_number = $this->pickPoint->createRegistry($sending);
+            $registry->status = PickPointRegistry::STATUSES['READY_FOR_SHIPMENT'];
+        } catch (\Throwable $exception) {
+            $message = sprintf(
+                'При формировании отправления %d произошла ошибка: %s',
+                $registry->id,
+                $exception->getMessage()
+            );
         }
     }
 
@@ -136,10 +154,8 @@ class RegistryService
      * Регистрация отправления в PickPoint
      *
      * @param PickPointRegistryItem $item
-     *
-     * @return bool
      */
-    protected function shipmentRegistration(PickPointRegistryItem $item): bool
+    protected function shipmentRegistration(PickPointRegistryItem $item)
     {
         $log = new PickPointRegistryItemLog();
         $log->registry_item_id = $item->id;
@@ -149,15 +165,30 @@ class RegistryService
             $item->id
         );
 
+        $places = array_map(
+            function (OrderBox $box) {
+                return [
+                    'BarCode' => '',
+                    'Width' => $box->width,
+                    'Height' => $box->height,
+                    'Depth' => $box->length,
+                    'Weight' => $box->weight / 1000,
+                ];
+            },
+            $item->order->boxes
+        );
+
+        $sum = $item->order->catalog_pay_id === Order::
+
         $sending = [
             'EDTN' => '<Идентификатор запроса, используемый для ответа. Указывайте уникальное число (50 символов)>',
             'IKN' => \Yii::$app->params['pickpoint']['ikn'],
             'ClientNumber' => '<Номер клиента в системе агрегатора (отражается в возвратных накладных от PickPoint), ' .
                                'обязательное поле, если у ИКН проставлен флаг в CRM "Является агрегатором">',
-            'ClientName' => '<Наименование клиента в системе агрегатора, необязательное поле. Следует заполнять только' .
-                            ' при регистрации КО переданный в запросе ИКН принадлежит клиенту-агрегатору>',
-            // 'TittleRus' => '<Наименование на русском для отображения на сайте в мониторинге PickPoint, необязательное поле>',
-            // 'TittleEng' => '<Наименование на английском для отображения на сайте в мониторинге PickPoint, необязательное поле>',
+            //'ClientName' => '<Наименование клиента в системе агрегатора, необязательное поле. Следует заполнять только' .
+            //                ' при регистрации КО переданный в запросе ИКН принадлежит клиенту-агрегатору>',
+            //'TittleRus' => '<Наименование на русском для отображения на сайте в мониторинге PickPoint, необязательное поле>',
+            //'TittleEng' => '<Наименование на английском для отображения на сайте в мониторинге PickPoint, необязательное поле>',
             'Invoice' => [
                 'SenderCode' => $item->order_id,
                 'Description' => '<Описание отправления, обязательное поле (200 символов)>', // [?]
@@ -166,7 +197,7 @@ class RegistryService
                 'MobilePhone' => sprintf('+%s', $item->order->user_phone),
                 'Email' => $item->order->user_email,
                 'ConsultantNumber' => '<Номер консультанта>', // [?]
-                'PostageType' => '<Тип услуги, (см. таблицу ниже) обязательное поле>',
+                'PostageType' => sprintf('1000%d', $item->order->catalog_pay_id),
                 'GettingType' => '<Тип сдачи отправления, (см. таблицу ниже) обязательное поле>',
                 'PayType' => 1,
                 'Sum' => '<Сумма, обязательное поле (число, два знака после запятой)>',
@@ -174,7 +205,7 @@ class RegistryService
                 'DeliveryVat' => '<Ставка НДС по сервисному сбору>',
                 'DeliveryFee' => '<Сумма сервисного сбора с НДС>',
                 'InsuareValue' => '<Страховка (число, два знака после запятой)>',
-                'DeliveryMode' => '<Режим доставки (значения : 1, если Standard и 2, если Priority)>',
+                'DeliveryMode' => 1, // '<Режим доставки (значения : 1, если Standard и 2, если Priority)>',
                 'SenderCity' => [
                     'CityName' => '<Название города сдачи отправления>',
                     'RegionName' => '<Название региона сдачи отправления>',
@@ -239,7 +270,7 @@ class RegistryService
         }
 
         $log->save();
-
-        return $item->save();
+        $item->save();
+        $item->refresh();
     }
 }

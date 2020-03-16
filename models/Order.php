@@ -24,7 +24,7 @@ use yii\db\ActiveRecord;
  * @property string  $user_email       Email заказчика
  *
  * @property PickupPoint $pickupPoint Постомат
- * @property OrderBox[] $orderBoxes Коробки заказа
+ * @property OrderBox[] $boxes Коробки заказа
  * @property PickPointRegistryItem $registryItem Запись в реестре
  */
 class Order extends ActiveRecord
@@ -100,7 +100,7 @@ class Order extends ActiveRecord
      *
      * @return ActiveQuery
      */
-    public function getOrderBoxes(): ActiveQuery
+    public function getBoxes(): ActiveQuery
     {
         return $this->hasMany(OrderBox::class, ['order_id' => 'id']);
     }

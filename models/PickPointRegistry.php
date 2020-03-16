@@ -21,7 +21,7 @@ use yii\db\ActiveRecord;
  * @property string  $created_at       Дата создания
  * @property string  $updated_at       Дата последнего изменения
  *
- * @property PickPointRegistryItem[] $registryItems Записи реестра
+ * @property PickPointRegistryItem[] $items Записи реестра
  */
 class PickPointRegistry extends ActiveRecord
 {
@@ -60,7 +60,7 @@ class PickPointRegistry extends ActiveRecord
      *
      * @return ActiveQuery
      */
-    public function getRegistryItems(): ActiveQuery
+    public function getItems(): ActiveQuery
     {
         return $this->hasMany(PickPointRegistryItem::class, ['registry_id' => 'id']);
     }
