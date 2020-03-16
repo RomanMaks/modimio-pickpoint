@@ -32,7 +32,7 @@ class Order extends ActiveRecord
     /** @var array Способы оплаты */
     public const PAYMENT_METHODS = [
         'CASH_ON_DELIVERY' => 1, // Наложенный платеж
-        'PREPAYMENT' => 2,       // Предоплата
+        'PREPAYMENT' => 3,       // Предоплата
     ];
 
     /**
