@@ -123,30 +123,31 @@ class PickPointAPIService
     }
 
     /**
-     * Регистрация отправления
+     * Регистрация отправлений
      *
-     * @param array $sending
+     * @param array $sendings
      *
      * @return array
      *
      * @throws \Exception
      */
-    public function createShipment(array $sending): array
+    public function createShipment(array $sendings): array
     {
         $content = [
             'SessionId' => $this->sessionId,
-            'Sendings' => [
-                $sending,
-            ]
+            'Sendings' => $sendings
         ];
 
-        $response = $this->sendRequest('/login', $content);
+        $response = $this->sendRequest('/CreateShipment', $content);
 
-        if (!empty($response->data['ErrorMessage'])) {
-            throw new \Exception($response->data['ErrorMessage']);
+        if (!empty($response->data['ErrorCode'])) {
+            throw new \Exception($response->data['Error']);
         }
 
-        return array_shift($response->data['CreatedSendings']);
+        return [
+            'created' => $response->data['CreatedSendings'],
+            'rejected' => $response->data['RejectedSendings']
+        ];
     }
 
     /**

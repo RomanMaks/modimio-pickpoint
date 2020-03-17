@@ -131,9 +131,7 @@ class RegistryService
     public function registration(PickPointRegistry $registry)
     {
         // Регистрация каждой записи реестра
-        foreach ($registry->items as $item) {
-            $this->shipmentRegistration($item);
-        }
+        $this->registrationShipments($registry->items);
 
         // Проверяем все ли записи были успешно зарегистированы
         // if () {}
@@ -168,94 +166,93 @@ class RegistryService
     }
 
     /**
-     * Регистрация отправления в PickPoint
+     * Регистрация отправлений в PickPoint
      *
-     * @param PickPointRegistryItem $item
+     * @param PickPointRegistryItem[] $items
+     *
+     * @throws \Exception
      */
-    protected function shipmentRegistration(PickPointRegistryItem $item)
+    protected function registrationShipments(array $items)
     {
-        $log = new PickPointRegistryItemLog();
-        $log->registry_item_id = $item->id;
-        $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['INFO'];
-        $log->message = sprintf(
-            'Успешно зарегистрированно отправление(запись реестра) %d.',
-            $item->id
-        );
+        $sendings = [];
 
-        if ($item->order->catalog_pay_id === Order::PAYMENT_METHODS['CASH_ON_DELIVERY']) {
-            $postageType = 10003;
-            $sum = sprintf("%01.2f", $item->order->total_price + $item->order->delivery_price);
-        } else {
-            $postageType = 10001;
-            $sum = 0;
-        }
+        /** @var PickPointRegistryItem $item */
+        foreach ($items as $item) {
+            if ($item->order->catalog_pay_id === Order::PAYMENT_METHODS['CASH_ON_DELIVERY']) {
+                $postageType = 10003;
+                $sum = sprintf("%01.2f", $item->order->total_price + $item->order->delivery_price);
+            } else {
+                $postageType = 10001;
+                $sum = 0;
+            }
 
-        $sending = [
-            'EDTN' => $item->id, // Идентификатор запроса, используемый для ответа. Указывайте уникальное число (50 символов)
-            'IKN' => \Yii::$app->params['pickpoint']['ikn'],
-            'Invoice' => [
-                'SenderCode' => $item->order_id,
-                'Description' => 'Коллекционная модель',
-                'RecipientName' => $item->order->fullName(),
-                'PostamatNumber' => $item->order->pickupPoint->code,
-                'MobilePhone' => sprintf('+%s', $item->order->user_phone),
-                'Email' => $item->order->user_email,
-                'PostageType' => $postageType,
-                'GettingType' => 102, // Тип сдачи отправления, обязательное поле
-                'PayType' => 1,
-                'Sum' => $sum,
-                'DeliveryVat' => 20, // Ставка НДС по сервисному сбору
-                'DeliveryFee' => $item->order->delivery_price, // Сумма сервисного сбора с НДС
-                'DeliveryMode' => 1, // Режим доставки (значения : 1, если Standard и 2, если Priority)
-                'SenderCity' => [
-                    'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города сдачи отправления
-                    'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона сдачи отправления
+            $sendings[] = [
+                'EDTN' => $item->id, // Идентификатор запроса, используемый для ответа. Указывайте уникальное число (50 символов)
+                'IKN' => \Yii::$app->params['pickpoint']['ikn'],
+                'Invoice' => [
+                    'SenderCode' => $item->id,
+                    'Description' => 'Коллекционная модель',
+                    'RecipientName' => $item->order->fullName(),
+                    'PostamatNumber' => $item->order->pickupPoint->code,
+                    'MobilePhone' => sprintf('+%s', $item->order->user_phone),
+                    'Email' => $item->order->user_email,
+                    'PostageType' => $postageType,
+                    'GettingType' => 102, // Тип сдачи отправления, обязательное поле
+                    'PayType' => 1,
+                    'Sum' => $sum,
+                    'DeliveryVat' => 20, // Ставка НДС по сервисному сбору
+                    'DeliveryFee' => $item->order->delivery_price, // Сумма сервисного сбора с НДС
+                    'DeliveryMode' => 1, // Режим доставки (значения : 1, если Standard и 2, если Priority)
+                    'SenderCity' => [
+                        'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города сдачи отправления
+                        'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона сдачи отправления
+                    ],
+                    'Places' => array_map(
+                        function (OrderBox $box) {
+                            return [
+                                'BarCode' => '',
+                                'Width' => $box->width,
+                                'Height' => $box->height,
+                                'Depth' => $box->length,
+                                'Weight' => $box->weight / 1000,
+                            ];
+                        },
+                        $item->order->boxes
+                    ),
                 ],
-                'Places' => array_map(
-                    function (OrderBox $box) {
-                        return [
-                            'BarCode' => '',
-                            'Width' => $box->width,
-                            'Height' => $box->height,
-                            'Depth' => $box->length,
-                            'Weight' => $box->weight / 1000,
-                            //'SubEncloses' => [ //  <Субвложимые>
-                            //    [
-                            //        'ProductCode' => '<Артикул товара(50 символов)>', // 1
-                            //        'GoodsCode' => '<ШК товара(50 символов)>', // 1
-                            //        'Name' => '<Наименование товара(200 символов)>', // 1
-                            //        'Price' => '<Стоимость ед. товара с НДС>', // 1
-                            //        'Quantity' => '<Кол-во ед. товара одного арт.>',
-                            //        'Vat' => '<Ставка НДС по товару>',
-                            //        'Description' => '<Описание товара>',
-                            //        'Upi' => '<код товара>',
-                            //    ],
-                            //],
-                        ];
-                    },
-                    $item->order->boxes
-                ),
-            ],
-        ];
-
-        try {
-            $createdShipment = $this->pickPoint->createShipment($sending);
-            $item->departure_track_code = $createdShipment['InvoiceNumber'];
-            $item->status = PickPointRegistryItem::STATUSES['REGISTERED'];
-        } catch (\Throwable $exception) {
-            $item->status = PickPointRegistryItem::STATUSES['ERROR'];
-
-            $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
-            $log->message = sprintf(
-                'При регистрации отправления(записи реестра) %d произошла ошибка: %s',
-                $item->id,
-                $exception->getMessage()
-            );
+            ];
         }
 
-        $log->save();
-        $item->save();
-        $item->refresh();
+        $sendings = $this->pickPoint->createShipment($sendings);
+
+        // Подтвержденные отправления
+        foreach ($sendings['created'] as $sendingCreated) {
+            $item = PickPointRegistryItem::findOne(['id' => $sendingCreated['SenderCode']]);
+            $item->departure_track_code = $sendingCreated['InvoiceNumber'];
+            $item->status = PickPointRegistryItem::STATUSES['REGISTERED'];
+            $item->save();
+
+            $log = new PickPointRegistryItemLog([
+                'registry_item_id' => $item->id,
+                'event_type' => PickPointRegistryItemLog::EVENT_TYPES['INFO'],
+                'message' => sprintf('Успешно зарегистрированно отправление %d.', $item->id)
+            ]);
+            $log->save();
+        }
+
+        // Отклоненные отправления
+        foreach ($sendings['rejected'] as $sendingRejected) {
+            $item = PickPointRegistryItem::findOne(['id' => $sendingRejected['SenderCode']]);
+            $item->status = PickPointRegistryItem::STATUSES['ERROR'];
+            $item->save();
+
+            $log = new PickPointRegistryItemLog([
+                'registry_item_id' => $item->id,
+                'event_type' => PickPointRegistryItemLog::EVENT_TYPES['ERROR'],
+                'message' => sprintf('При регистрации отправления %d произошла ошибка: %s', $item->id, $sendingRejected['ErrorMessage'])
+            ]);
+            $log->save();
+        }
     }
 
     /**
