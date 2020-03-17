@@ -189,7 +189,8 @@ class PickPointAPIService
             'Invoices' => $invoices,
         ];
 
-        $response = $this->sendRequest('/makereestrnumber', $content);
+        // TODO: Пока формирую этикетоки pdf для принтера Zebra, обычное формирование этикеток в pdf не работает
+        $response = $this->sendRequest('/makeZLabel', $content);
 
         if ('Error' === mb_substr($response->content, 0, 5) || '%PDF' !== mb_substr($response->content, 0, 4)) {
             throw new \Exception('Произошла ошибка при создании этикетки');

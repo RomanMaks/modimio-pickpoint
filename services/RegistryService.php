@@ -133,8 +133,14 @@ class RegistryService
         // Регистрация каждой записи реестра
         $this->registrationShipments($registry->items);
 
+        $statuses = $registry->getItems()->select('status')->column();
+
         // Проверяем все ли записи были успешно зарегистированы
-        // if () {}
+        if (in_array(PickPointRegistryItem::STATUSES['CREATE'], $statuses) ||
+            in_array(PickPointRegistryItem::STATUSES['ERROR'], $statuses)
+        ) {
+            // TODO: Выброс ошибки
+        }
 
         // Формирование этикеток
         $pathToLinks = $this->labeling($registry);
@@ -143,7 +149,7 @@ class RegistryService
             'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города передачи отправления в PickPoint
             'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона передачи отправления в PickPoint
             'DeliveryPoint' => \Yii::$app->params['pickpoint']['out']['postomat'], // Пункт сдачи, номер постамата
-            'ReestrNumber' => '<Номер документа Клиента>',
+            // 'ReestrNumber' => '<Номер документа Клиента>',
             'Invoices' => $registry->getItems()->select('departure_track_code')->column(),
         ];
 
@@ -274,7 +280,7 @@ class RegistryService
         $file = $this->pickPoint->makelabel($invoices);
 
         $filename = str_replace(
-            ['%DOC_NUMBER%', '%DATETIME%'],
+            ['%REGISTRY_NUMBER%', '%DATETIME%'],
             [$registry->id, date('YmdHis')],
             \Yii::$app->params['pickpoint']['fileNameMask']
         );
@@ -283,6 +289,6 @@ class RegistryService
             throw new \Exception('Неудалось сохранить pdf файл с этикетками.');
         }
 
-        return $filename;
+        return self::PATH_TO_DIRECTORY . $filename;
     }
 }
