@@ -21,7 +21,7 @@ class RegistryService
     protected $pickPoint;
 
     /** @var string Путь до папки где хранятся PDF файлы для этикеток */
-    protected const PATH_TO_DIRECTORY = __DIR__ . '/../data/';
+    protected const PATH_TO_DIRECTORY = __DIR__ . '/../data/labels/';
 
     /**
      * RegistryService constructor.
@@ -39,10 +39,10 @@ class RegistryService
      */
     public function createOrUpdate()
     {
-        $registry = PickPointRegistry::findOne([
-            'created_at' => date('Y-m-d'),
-            'status' => PickPointRegistry::STATUSES['OPEN']
-        ]);
+        $registry = PickPointRegistry::find()
+            ->where(['between', 'created_at', date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
+            ->andWhere(['status' => PickPointRegistry::STATUSES['OPEN']])
+            ->one();
 
         if (empty($registry)) {
             $registry = new PickPointRegistry();
@@ -139,7 +139,7 @@ class RegistryService
         if (in_array(PickPointRegistryItem::STATUSES['CREATE'], $statuses) ||
             in_array(PickPointRegistryItem::STATUSES['ERROR'], $statuses)
         ) {
-            // TODO: Выброс ошибки
+            throw new \Exception('Не все записи реестра удалось зарегистрировать в PickPoint');
         }
 
         // Формирование этикеток
@@ -168,6 +168,7 @@ class RegistryService
                 $exception->getMessage()
             );
             \Yii::error($message);
+            throw new \Exception($message);
         }
     }
 
@@ -273,7 +274,7 @@ class RegistryService
     protected function labeling(PickPointRegistry $registry): string
     {
         $invoices = array_map(
-            function (PickPointRegistryItem $item) { return $item->id; },
+            function (PickPointRegistryItem $item) { return $item->departure_track_code; },
             $registry->items
         );
 

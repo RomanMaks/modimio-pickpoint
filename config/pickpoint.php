@@ -12,5 +12,5 @@ return [
         'city' => 'Кострома',
         'region' => 'Костромской'
     ],
-    'fileNameMask' => 'labels_%REGISTRY_NUMBER%_%DATETIME%.pdf',
+    'fileNameMask' => 'registry_%REGISTRY_NUMBER%_%DATETIME%.pdf',
 ];
