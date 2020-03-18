@@ -2,7 +2,13 @@
 
 namespace app\services;
 
+use app\exceptions\PickPoint\FailedRegisterShipmentException;
+use app\exceptions\PickPoint\FailedToFormLabelsException;
+use app\exceptions\PickPoint\FailedToFormRegistryException;
+use app\exceptions\PickPoint\InternalServerErrorException;
+use app\exceptions\PickPoint\InvalidResponseException;
 use app\exceptions\PickPoint\LoginFailedException;
+use app\exceptions\PickPoint\PickPointApiException;
 use app\models\Session;
 use yii\helpers\Json;
 use yii\httpclient\Client;
@@ -25,7 +31,7 @@ class PickPointAPIService
     /**
      * PickPointAPIService constructor.
      *
-     * @throws \Exception
+     * @throws PickPointApiException
      */
     public function __construct()
     {
@@ -53,7 +59,8 @@ class PickPointAPIService
      *
      * @return Response
      *
-     * @throws \Exception
+     * @throws InternalServerErrorException
+     * @throws InvalidResponseException
      */
     protected function sendRequest(string $url, array $content, string $method = 'POST'): Response
     {
@@ -66,12 +73,12 @@ class PickPointAPIService
                 ->send();
         } catch (\Throwable $exception) {
             \Yii::error($exception->getMessage());
-            throw new \Exception($exception->getMessage());
+            throw new InternalServerErrorException($exception->getMessage());
         }
 
         if (!$response->isOk) {
             \Yii::error($response->getContent());
-            throw new \Exception($response->getContent(), $response->getStatusCode());
+            throw new InvalidResponseException($response->getContent());
         }
 
         return $response;
@@ -80,7 +87,9 @@ class PickPointAPIService
     /**
      * Обновить токен
      *
-     * @throws \Exception
+     * @throws InternalServerErrorException
+     * @throws InvalidResponseException
+     * @throws LoginFailedException
      */
     protected function refresh()
     {
@@ -104,6 +113,8 @@ class PickPointAPIService
      *
      * @return string
      *
+     * @throws InternalServerErrorException
+     * @throws InvalidResponseException
      * @throws LoginFailedException
      */
     protected function getSession(): string
@@ -130,7 +141,9 @@ class PickPointAPIService
      *
      * @return array
      *
-     * @throws \Exception
+     * @throws InternalServerErrorException
+     * @throws InvalidResponseException
+     * @throws FailedRegisterShipmentException
      */
     public function createShipment(array $sendings): array
     {
@@ -142,7 +155,7 @@ class PickPointAPIService
         $response = $this->sendRequest('/CreateShipment', $content);
 
         if (!empty($response->data['ErrorCode'])) {
-            throw new \Exception($response->data['Error']);
+            throw new FailedRegisterShipmentException($response->data['Error']);
         }
 
         return [
@@ -158,7 +171,9 @@ class PickPointAPIService
      *
      * @return mixed
      *
-     * @throws \Exception
+     * @throws InternalServerErrorException
+     * @throws InvalidResponseException
+     * @throws FailedToFormRegistryException
      */
     public function createRegistry(array $sending)
     {
@@ -168,7 +183,7 @@ class PickPointAPIService
         );
 
         if (!empty($response->data['ErrorMessage'])) {
-            throw new \Exception($response->data['ErrorMessage']);
+            throw new FailedToFormRegistryException($response->data['ErrorMessage']);
         }
 
         return $response->data['Numbers'][0];
@@ -181,7 +196,9 @@ class PickPointAPIService
      *
      * @return string
      *
-     * @throws \Exception
+     * @throws InternalServerErrorException
+     * @throws InvalidResponseException
+     * @throws FailedToFormLabelsException
      */
     public function makelabel(array $invoices): string
     {
@@ -193,7 +210,7 @@ class PickPointAPIService
         $response = $this->sendRequest('/makelabel', $content);
 
         if ('Error' === mb_substr($response->content, 0, 5) || '%PDF' !== mb_substr($response->content, 0, 4)) {
-            throw new \Exception('Произошла ошибка при создании этикетки');
+            throw new FailedToFormLabelsException('Произошла ошибка при создании этикетки');
         }
 
         return $response->content;
