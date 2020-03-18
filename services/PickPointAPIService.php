@@ -2,7 +2,7 @@
 
 namespace app\services;
 
-use app\models\Token;
+use app\models\Session;
 use yii\helpers\Json;
 use yii\httpclient\Client;
 use yii\httpclient\Response;
@@ -32,14 +32,14 @@ class PickPointAPIService
             'baseUrl' => \Yii::$app->params['pickpoint']['url'],
         ]);
 
-        $token = Token::findOne(['service' => self::class]);
+        $session = Session::findOne(['service' => self::class]);
 
         // ЕСЛИ токен пустой ИЛИ текущее время больше времени жизни токена ТО перевыпустить
-        if (empty($token) ||
-            (new \DateTime) > (new \DateTime($token->issued_at))->add(new \DateInterval('P1D'))) {
+        if (empty($session) ||
+            (new \DateTime) > (new \DateTime($session->issued_at))->add(new \DateInterval('P1D'))) {
             $this->refresh();
         } else {
-            $this->sessionId = $token->session_id;
+            $this->sessionId = $session->token;
         }
     }
 
@@ -83,19 +83,19 @@ class PickPointAPIService
      */
     protected function refresh()
     {
-        $token = Token::findOne(['service' => self::class]);
+        $session = Session::findOne(['service' => self::class]);
 
         $this->sessionId = $this->getSession();
 
-        if (empty($token)) {
-            $token = new Token;
-            $token->service = self::class;
+        if (empty($session)) {
+            $session = new Session;
+            $session->service = self::class;
         }
 
-        $token->session_id = $this->sessionId;
-        $token->issued_at = date('Y-m-d H:i:s');
+        $session->token = $this->sessionId;
+        $session->issued_at = date('Y-m-d H:i:s');
 
-        $token->save();
+        $session->save();
     }
 
     /**

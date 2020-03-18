@@ -5,22 +5,22 @@ use yii\db\Migration;
 /**
  * Токены
  *
- * Handles the creation of table `tokens`.
+ * Handles the creation of table `sessions`.
  */
-class m200314_142524_create_tokens_table extends Migration
+class m200314_142524_create_sessions_table extends Migration
 {
     public function up()
     {
-        $this->createTable('tokens', [
+        $this->createTable('sessions', [
             'id' => $this->primaryKey(),
             'service' => $this->string()->unique()->notNull(),
-            'session_id' => $this->string()->notNull(),
+            'token' => $this->string()->notNull(),
             'issued_at' => $this->timestamp()->notNull(),
         ]);
     }
 
     public function down()
     {
-        $this->dropTable('tokens');
+        $this->dropTable('sessions');
     }
 }
