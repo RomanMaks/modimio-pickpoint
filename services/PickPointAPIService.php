@@ -28,6 +28,8 @@ class PickPointAPIService
     /** @var string $sessionId */
     protected $sessionId;
 
+    protected const CATALOG_LOG = 'API PickPoint';
+
     /**
      * PickPointAPIService constructor.
      *
@@ -65,6 +67,10 @@ class PickPointAPIService
     protected function sendRequest(string $url, array $content, string $method = 'POST'): Response
     {
         try {
+            \Yii::info(
+                sprintf('REQUEST::URL: %s; CONTENT: %s', $url, json_encode($content)),
+                self::CATALOG_LOG
+            );
             $response = $this->client->createRequest()
                 ->setMethod($method)
                 ->setUrl($url)
@@ -72,12 +78,18 @@ class PickPointAPIService
                 ->setContent(Json::encode($content))
                 ->send();
         } catch (\Throwable $exception) {
-            \Yii::error($exception->getMessage());
+            \Yii::error(
+                sprintf('URL: %s; ERROR: %s', $url, $exception->getMessage()),
+                self::CATALOG_LOG
+            );
             throw new InternalServerErrorException($exception->getMessage());
         }
 
         if (!$response->isOk) {
-            \Yii::error($response->getContent());
+            \Yii::error(
+                sprintf('RESPONSE::URL: %s; CONTENT: %s', $url, $response->content),
+                self::CATALOG_LOG
+            );
             throw new InvalidResponseException($response->getContent());
         }
 
@@ -127,7 +139,10 @@ class PickPointAPIService
         $response = $this->sendRequest('/login', $content);
 
         if (!empty($response->data['ErrorMessage'])) {
-            \Yii::error($response->data['ErrorMessage']);
+            \Yii::error(
+                sprintf('RESPONSE::URL: %s; CONTENT: %s', '/login', $response->content),
+                self::CATALOG_LOG
+            );
             throw new LoginFailedException($response->data['ErrorMessage'], $response->data['ErrorCode']);
         }
 
@@ -155,6 +170,10 @@ class PickPointAPIService
         $response = $this->sendRequest('/CreateShipment', $content);
 
         if (!empty($response->data['ErrorCode'])) {
+            \Yii::error(
+                sprintf('RESPONSE::URL: %s; CONTENT: %s', '/CreateShipment', $response->content),
+                self::CATALOG_LOG
+            );
             throw new FailedRegisterShipmentException($response->data['Error']);
         }
 
@@ -183,6 +202,10 @@ class PickPointAPIService
         );
 
         if (!empty($response->data['ErrorMessage'])) {
+            \Yii::error(
+                sprintf('RESPONSE::URL: %s; CONTENT: %s','/makereestrnumber', $response->content),
+                self::CATALOG_LOG
+            );
             throw new FailedToFormRegistryException($response->data['ErrorMessage']);
         }
 
@@ -210,6 +233,10 @@ class PickPointAPIService
         $response = $this->sendRequest('/makelabel', $content);
 
         if ('Error' === mb_substr($response->content, 0, 5) || '%PDF' !== mb_substr($response->content, 0, 4)) {
+            \Yii::error(
+                sprintf('RESPONSE::URL: %s; CONTENT: %s', '/makelabel', $response->content),
+                self::CATALOG_LOG
+            );
             throw new FailedToFormLabelsException('Произошла ошибка при создании этикетки');
         }
 
