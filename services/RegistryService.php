@@ -54,6 +54,7 @@ class RegistryService
 
         $orders = Order::find()
             ->joinWith('registryItem')
+            ->where(['pick_point_registry_item.id' => null])
             ->all();
 
         /** @var Order $order */
@@ -203,7 +204,7 @@ class RegistryService
                 'EDTN' => $item->id, // Идентификатор запроса, используемый для ответа. Указывайте уникальное число (50 символов)
                 'IKN' => \Yii::$app->params['pickpoint']['ikn'], // Номер договора
                 'Invoice' => [
-                    'SenderCode' => $item->id, // Номер заказа магазина (50 символов)
+                    'SenderCode' => $item->order->alt_number, // Номер заказа магазина (50 символов)
                     'Description' => 'Коллекционная модель', // Описание отправления, обязательное поле (200 символов)
                     'RecipientName' => $item->order->fullName(), // Имя получателя (150 символов)
                     'PostamatNumber' => $item->order->pickupPoint->code, // Номер постамата, обязательное поле (8 символов)
@@ -240,7 +241,7 @@ class RegistryService
 
         // Подтвержденные отправления
         foreach ($sendings['created'] as $sendingCreated) {
-            $item = PickPointRegistryItem::findOne(['id' => $sendingCreated['SenderCode']]);
+            $item = Order::findOne(['alt_number' => $sendingCreated['SenderCode']])->registryItem;
             $item->departure_track_code = $sendingCreated['InvoiceNumber'];
             $item->status = PickPointRegistryItem::STATUSES['REGISTERED'];
             $item->save();
@@ -255,7 +256,7 @@ class RegistryService
 
         // Отклоненные отправления
         foreach ($sendings['rejected'] as $sendingRejected) {
-            $item = PickPointRegistryItem::findOne(['id' => $sendingRejected['SenderCode']]);
+            $item = Order::findOne(['alt_number' => $sendingRejected['SenderCode']])->registryItem;
             $item->status = PickPointRegistryItem::STATUSES['ERROR'];
             $item->save();
 
