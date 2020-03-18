@@ -90,7 +90,7 @@ class RegistryService
                 $item->delete();
                 $this->log->info($item, 'Удаление записи реестра');
             } catch (\Throwable $exception) {
-                $this->log->error($item, sprintf('Неудалось удалить запись реестра. Описание: %s',
+                $this->log->error($item, sprintf('Не удалось удалить запись реестра. Описание: %s',
                     $exception->getMessage()
                 ));
             }
@@ -151,6 +151,10 @@ class RegistryService
             );
             \Yii::error($message);
             throw new \Exception($message);
+        }
+
+        foreach ($registry->items as $item) {
+            $this->log->info($item, 'Реестр зарегистрирован');
         }
     }
 
@@ -235,7 +239,7 @@ class RegistryService
             $item = Order::findOne(['alt_number' => $sendingRejected['SenderCode']])->registryItem;
             $item->status = PickPointRegistryItem::STATUSES['ERROR'];
             $item->save();
-            $this->log->error($item, sprintf('Неудалось зарегистрировать запись реестра. Описание: %s',
+            $this->log->error($item, sprintf('Не удалось зарегистрировать запись реестра. Описание: %s',
                 $sendingRejected['ErrorMessage']
             ));
         }
@@ -262,7 +266,7 @@ class RegistryService
         );
 
         if (false === file_put_contents(self::PATH_TO_DIRECTORY . $filename, $file)) {
-            throw new \Exception('Неудалось сохранить pdf файл с этикетками.');
+            throw new \Exception('Не удалось сохранить pdf файл с этикетками.');
         }
 
         return self::PATH_TO_DIRECTORY . $filename;
