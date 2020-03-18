@@ -171,7 +171,7 @@ class PickPointAPIService
             throw new \Exception($response->data['ErrorMessage']);
         }
 
-        return array_shift($response->data['Numbers']);
+        return $response->data['Numbers'][0];
     }
 
     /**
@@ -190,8 +190,7 @@ class PickPointAPIService
             'Invoices' => $invoices,
         ];
 
-        // TODO: Пока формирую этикетоки pdf для принтера Zebra, обычное формирование этикеток в pdf не работает
-        $response = $this->sendRequest('/makeZLabel', $content);
+        $response = $this->sendRequest('/makelabel', $content);
 
         if ('Error' === mb_substr($response->content, 0, 5) || '%PDF' !== mb_substr($response->content, 0, 4)) {
             throw new \Exception('Произошла ошибка при создании этикетки');

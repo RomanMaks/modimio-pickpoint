@@ -133,7 +133,9 @@ class RegistryService
         // Регистрация каждой записи реестра
         $this->registrationShipments($registry->items);
 
-        $statuses = $registry->getItems()->select('status')->column();
+        $statuses = $registry->getItems()
+            ->select('status')
+            ->column();
 
         // Проверяем все ли записи были успешно зарегистированы
         if (in_array(PickPointRegistryItem::STATUSES['CREATE'], $statuses) ||
@@ -142,15 +144,19 @@ class RegistryService
             throw new \Exception('Не все записи реестра удалось зарегистрировать в PickPoint');
         }
 
+        $invoices = $registry->getItems()
+            ->select('departure_track_code')
+            ->column();
+
         // Формирование этикеток
-        $pathToLinks = $this->labeling($registry);
+        $pathToLinks = $this->labeling($registry->id, $invoices);
 
         $sending = [
             'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города передачи отправления в PickPoint
             'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона передачи отправления в PickPoint
             'DeliveryPoint' => \Yii::$app->params['pickpoint']['out']['postomat'], // Пункт сдачи, номер постамата
             'ReestrNumber' => $registry->id, // Номер документа Клиента
-            'Invoices' => $registry->getItems()->select('departure_track_code')->column(),
+            'Invoices' => $invoices,
         ];
 
         try {
@@ -195,22 +201,22 @@ class RegistryService
 
             $sendings[] = [
                 'EDTN' => $item->id, // Идентификатор запроса, используемый для ответа. Указывайте уникальное число (50 символов)
-                'IKN' => \Yii::$app->params['pickpoint']['ikn'],
+                'IKN' => \Yii::$app->params['pickpoint']['ikn'], // Номер договора
                 'Invoice' => [
-                    'SenderCode' => $item->id,
-                    'Description' => 'Коллекционная модель',
-                    'RecipientName' => $item->order->fullName(),
-                    'PostamatNumber' => $item->order->pickupPoint->code,
-                    'MobilePhone' => sprintf('+%s', $item->order->user_phone),
-                    'Email' => $item->order->user_email,
-                    'PostageType' => $postageType,
+                    'SenderCode' => $item->id, // Номер заказа магазина (50 символов)
+                    'Description' => 'Коллекционная модель', // Описание отправления, обязательное поле (200 символов)
+                    'RecipientName' => $item->order->fullName(), // Имя получателя (150 символов)
+                    'PostamatNumber' => $item->order->pickupPoint->code, // Номер постамата, обязательное поле (8 символов)
+                    'MobilePhone' => sprintf('+%s', $item->order->user_phone), // Один номер телефона получателя, обязательное поле(100 символов)
+                    'Email' => $item->order->user_email, // Адрес электронной почты получателя (256 символов)
+                    'PostageType' => $postageType, // Тип услуги, обязательное поле
                     'GettingType' => 102, // Тип сдачи отправления, обязательное поле
-                    'PayType' => 1,
-                    'Sum' => $sum,
+                    'PayType' => 1, // Тип оплаты, обязательное поле
+                    'Sum' => $sum, // Сумма, обязательное поле (число, два знака после запятой)
                     'DeliveryVat' => 20, // Ставка НДС по сервисному сбору
                     'DeliveryFee' => $item->order->delivery_price, // Сумма сервисного сбора с НДС
                     'DeliveryMode' => 1, // Режим доставки (значения : 1, если Standard и 2, если Priority)
-                    'SenderCity' => [
+                    'SenderCity' => [ // Город сдачи
                         'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города сдачи отправления
                         'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона сдачи отправления
                     ],
@@ -265,24 +271,20 @@ class RegistryService
     /**
      * Формирование этикеток
      *
-     * @param PickPointRegistry $registry
+     * @param int $registryId
+     * @param array $invoices
      *
      * @return string
      *
      * @throws \Exception
      */
-    protected function labeling(PickPointRegistry $registry): string
+    protected function labeling(int $registryId, array $invoices): string
     {
-        $invoices = array_map(
-            function (PickPointRegistryItem $item) { return $item->departure_track_code; },
-            $registry->items
-        );
-
         $file = $this->pickPoint->makelabel($invoices);
 
         $filename = str_replace(
             ['%REGISTRY_NUMBER%', '%DATETIME%'],
-            [$registry->id, date('YmdHis')],
+            [$registryId, date('YmdHis')],
             \Yii::$app->params['pickpoint']['fileNameMask']
         );
 
