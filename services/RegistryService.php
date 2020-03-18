@@ -20,6 +20,9 @@ class RegistryService
     /** @var PickPointAPIService $pickPoint */
     protected $pickPoint;
 
+    /** @var RegistryItemLogService $log */
+    protected $log;
+
     /** @var string Путь до папки где хранятся PDF файлы для этикеток */
     protected const PATH_TO_DIRECTORY = __DIR__ . '/../data/labels/';
 
@@ -30,6 +33,7 @@ class RegistryService
     public function __construct()
     {
         $this->pickPoint = new PickPointAPIService();
+        $this->log = new RegistryItemLogService();
     }
 
     /**
@@ -64,23 +68,10 @@ class RegistryService
                 'registry_id' => $registry->id,
                 'order_id' => $order->id,
             ]);
-            $result = $item->save();
+            $item->save();
             $item->refresh();
 
-            $log = new PickPointRegistryItemLog();
-            $log->registry_item_id = $item->id;
-
-            if ($result) {
-                $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['INFO'];
-                $log->message = 'Новая запись реестра';
-            } else {
-                $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
-                $log->message = sprintf('Неудалось добавить запись реестра. Ошибка: %s',
-                    implode(', ', $item->firstErrors)
-                );
-            }
-
-            $log->save();
+            $this->log->info($item, 'Новая запись реестра');
         }
     }
 
@@ -95,21 +86,14 @@ class RegistryService
 
         /** @var PickPointRegistryItem $item */
         foreach ($items as $item) {
-            $log = new PickPointRegistryItemLog();
-            $log->registry_item_id = $item->id;
-
             try {
                 $item->delete();
-                $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['INFO'];
-                $log->message = 'Удаление записи реестра';
+                $this->log->info($item, 'Удаление записи реестра');
             } catch (\Throwable $exception) {
-                $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
-                $log->message = sprintf('Неудалось удалить запись реестра. Ошибка: %s',
-                    implode(', ', $item->firstErrors)
-                );
+                $this->log->error($item, sprintf('Неудалось удалить запись реестра. Описание: %s',
+                    $exception->getMessage()
+                ));
             }
-
-            $log->save();
         }
     }
 
@@ -243,13 +227,7 @@ class RegistryService
             $item->departure_track_code = $sendingCreated['InvoiceNumber'];
             $item->status = PickPointRegistryItem::STATUSES['REGISTERED'];
             $item->save();
-
-            $log = new PickPointRegistryItemLog([
-                'registry_item_id' => $item->id,
-                'event_type' => PickPointRegistryItemLog::EVENT_TYPES['INFO'],
-                'message' => 'Запись реестра зарегистрирована'
-            ]);
-            $log->save();
+            $this->log->info($item, 'Запись реестра зарегистрирована');
         }
 
         // Отклоненные записи реестра
@@ -257,15 +235,9 @@ class RegistryService
             $item = Order::findOne(['alt_number' => $sendingRejected['SenderCode']])->registryItem;
             $item->status = PickPointRegistryItem::STATUSES['ERROR'];
             $item->save();
-
-            $log = new PickPointRegistryItemLog([
-                'registry_item_id' => $item->id,
-                'event_type' => PickPointRegistryItemLog::EVENT_TYPES['ERROR'],
-                'message' => sprintf('Неудалось зарегистрировать запись реестра. Описание: %s',
-                    $sendingRejected['ErrorMessage']
-                )
-            ]);
-            $log->save();
+            $this->log->error($item, sprintf('Неудалось зарегистрировать запись реестра. Описание: %s',
+                $sendingRejected['ErrorMessage']
+            ));
         }
     }
 
