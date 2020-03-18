@@ -72,17 +72,10 @@ class RegistryService
 
             if ($result) {
                 $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['INFO'];
-                $log->message = sprintf(
-                    'Успешно создана запись реестра %d для заказа %d.',
-                    $item->id,
-                    $order->id
-                );
+                $log->message = 'Новая запись реестра';
             } else {
                 $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
-                $log->message = sprintf(
-                    'При создании записи реестра %d произошла ошибка, неудалось связать с заказом %d. Ошибка %s',
-                    $item->id,
-                    $order->id,
+                $log->message = sprintf('Неудалось добавить запись реестра. Ошибка: %s',
                     implode(', ', $item->firstErrors)
                 );
             }
@@ -108,13 +101,11 @@ class RegistryService
             try {
                 $item->delete();
                 $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['INFO'];
-                $log->message = sprintf('Удаление записи реестра %d.', $item->id);
+                $log->message = 'Удаление записи реестра';
             } catch (\Throwable $exception) {
                 $log->event_type = PickPointRegistryItemLog::EVENT_TYPES['ERROR'];
-                $log->message = sprintf(
-                    'При удалении записи реестра %d произошла ошибка. Ошибка %s',
-                    $item->id,
-                    $exception->getMessage()
+                $log->message = sprintf('Неудалось удалить запись реестра. Ошибка: %s',
+                    implode(', ', $item->firstErrors)
                 );
             }
 
@@ -192,6 +183,11 @@ class RegistryService
 
         /** @var PickPointRegistryItem $item */
         foreach ($items as $item) {
+            // Пропускаем записи реестра которые уже были зарегистрированы
+            if (PickPointRegistryItem::STATUSES['REGISTERED'] === $item->status) {
+                continue;
+            }
+
             if ($item->order->catalog_pay_id === Order::PAYMENT_METHODS['CASH_ON_DELIVERY']) {
                 $postageType = 10003;
                 $sum = sprintf("%01.2f", $item->order->total_price + $item->order->delivery_price);
@@ -237,9 +233,11 @@ class RegistryService
             ];
         }
 
+        // Если нет записей на регистрацию то выходим
+
         $sendings = $this->pickPoint->createShipment($sendings);
 
-        // Подтвержденные отправления
+        // Зарегистрированные записи реестра
         foreach ($sendings['created'] as $sendingCreated) {
             $item = Order::findOne(['alt_number' => $sendingCreated['SenderCode']])->registryItem;
             $item->departure_track_code = $sendingCreated['InvoiceNumber'];
@@ -249,12 +247,12 @@ class RegistryService
             $log = new PickPointRegistryItemLog([
                 'registry_item_id' => $item->id,
                 'event_type' => PickPointRegistryItemLog::EVENT_TYPES['INFO'],
-                'message' => sprintf('Успешно зарегистрированно отправление %d.', $item->id)
+                'message' => 'Запись реестра зарегистрирована'
             ]);
             $log->save();
         }
 
-        // Отклоненные отправления
+        // Отклоненные записи реестра
         foreach ($sendings['rejected'] as $sendingRejected) {
             $item = Order::findOne(['alt_number' => $sendingRejected['SenderCode']])->registryItem;
             $item->status = PickPointRegistryItem::STATUSES['ERROR'];
@@ -263,7 +261,9 @@ class RegistryService
             $log = new PickPointRegistryItemLog([
                 'registry_item_id' => $item->id,
                 'event_type' => PickPointRegistryItemLog::EVENT_TYPES['ERROR'],
-                'message' => sprintf('При регистрации отправления %d произошла ошибка: %s', $item->id, $sendingRejected['ErrorMessage'])
+                'message' => sprintf('Неудалось зарегистрировать запись реестра. Описание: %s',
+                    $sendingRejected['ErrorMessage']
+                )
             ]);
             $log->save();
         }
