@@ -2,6 +2,7 @@
 
 namespace app\services;
 
+use app\exceptions\PickPoint\LoginFailedException;
 use app\models\Session;
 use yii\helpers\Json;
 use yii\httpclient\Client;
@@ -103,7 +104,7 @@ class PickPointAPIService
      *
      * @return string
      *
-     * @throws \Exception
+     * @throws LoginFailedException
      */
     protected function getSession(): string
     {
@@ -116,7 +117,7 @@ class PickPointAPIService
 
         if (!empty($response->data['ErrorMessage'])) {
             \Yii::error($response->data['ErrorMessage']);
-            throw new \Exception($response->data['ErrorMessage']);
+            throw new LoginFailedException($response->data['ErrorMessage'], $response->data['ErrorCode']);
         }
 
         return $response->data['SessionId'];

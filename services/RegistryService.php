@@ -149,7 +149,7 @@ class RegistryService
             'CityName' => \Yii::$app->params['pickpoint']['senderCity']['city'], // Название города передачи отправления в PickPoint
             'RegionName' => \Yii::$app->params['pickpoint']['senderCity']['region'], // Название региона передачи отправления в PickPoint
             'DeliveryPoint' => \Yii::$app->params['pickpoint']['out']['postomat'], // Пункт сдачи, номер постамата
-            // 'ReestrNumber' => '<Номер документа Клиента>',
+            'ReestrNumber' => $registry->id, // Номер документа Клиента
             'Invoices' => $registry->getItems()->select('departure_track_code')->column(),
         ];
 
