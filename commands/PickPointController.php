@@ -81,7 +81,7 @@ class PickPointController extends Controller
      */
     protected function info(string $message)
     {
-        $this->stdout('[INFO]', Console::BG_GREEN);
+        $this->stdout('[INFO]', Console::BG_GREEN, Console::FG_BLACK);
 
         $this->stdout('[' . self::CATEGORY_ERROR . '] ' . $message . PHP_EOL);
     }

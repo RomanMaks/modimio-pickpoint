@@ -225,6 +225,9 @@ class RegistryService
         }
 
         // Если нет записей на регистрацию то выходим
+        if (empty($sendings)) {
+            throw new \Exception('Нет отправлений для регистрации реестра в PickPoint');
+        }
 
         $sendings = $this->pickPoint->createShipment($sendings);
 
