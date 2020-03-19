@@ -3,6 +3,7 @@
 namespace app\services;
 
 use app\exceptions\PickPoint\FailedRegisterShipmentException;
+use app\exceptions\PickPoint\FailedToDeleteInvoiceException;
 use app\exceptions\PickPoint\FailedToFormLabelsException;
 use app\exceptions\PickPoint\FailedToFormRegistryException;
 use app\exceptions\PickPoint\InternalServerErrorException;
@@ -138,7 +139,7 @@ class PickPointAPIService
 
         $response = $this->sendRequest('/login', $content);
 
-        if (!empty($response->data['ErrorMessage'])) {
+        if (!empty($response->data['ErrorCode'])) {
             \Yii::error(
                 sprintf('RESPONSE::URL: %s; CONTENT: %s', '/login', $response->content),
                 self::CATALOG_LOG
@@ -201,7 +202,7 @@ class PickPointAPIService
             array_merge(['SessionId' => $this->sessionId], $sending)
         );
 
-        if (!empty($response->data['ErrorMessage'])) {
+        if (!empty($response->data['ErrorCode'])) {
             \Yii::error(
                 sprintf('RESPONSE::URL: %s; CONTENT: %s','/makereestrnumber', $response->content),
                 self::CATALOG_LOG
@@ -241,5 +242,33 @@ class PickPointAPIService
         }
 
         return $response->content;
+    }
+
+    /**
+     * Удаление отправления
+     *
+     * @param array $invoice
+     *
+     * @return bool
+     *
+     * @throws FailedToDeleteInvoiceException
+     * @throws InternalServerErrorException
+     * @throws InvalidResponseException
+     */
+    public function cancelInvoice(array $invoice): bool
+    {
+        $content = array_merge(['SessionId' => $this->sessionId], $invoice);
+
+        $response = $this->sendRequest('/cancelInvoice', $content);
+
+        if (!empty($response->data['ErrorCode'])) {
+            \Yii::error(
+                sprintf('RESPONSE::URL: %s; CONTENT: %s','/cancelInvoice', $response->content),
+                self::CATALOG_LOG
+            );
+            throw new FailedToDeleteInvoiceException($response->data['Error']);
+        }
+
+        return true;
     }
 }
