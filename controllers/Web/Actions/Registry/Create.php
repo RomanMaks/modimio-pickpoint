@@ -15,6 +15,8 @@ class Create extends Action
 {
     /**
      * @return string
+     *
+     * @throws \Exception
      */
     public function run()
     {
@@ -23,7 +25,7 @@ class Create extends Action
         $errors = [];
 
         try {
-            $service->createOrUpdate();
+            $registry = $service->create();
         } catch (\Throwable $exception) {
             $errors[] = $exception->getMessage();
         }

@@ -7,7 +7,6 @@ use app\models\Order;
 use app\models\OrderBox;
 use app\models\PickPointRegistry;
 use app\models\PickPointRegistryItem;
-use app\models\PickPointRegistryItemLog;
 
 /**
  * Сервис для работы с реестрами
@@ -37,11 +36,13 @@ class RegistryService
     }
 
     /**
-     * Создание или обновление открытого реестра за текущий день
+     * Создание открытого реестра за текущий день если он еще не создан
+     *
+     * @return PickPointRegistry
      *
      * @throws \Exception
      */
-    public function createOrUpdate()
+    public function create(): PickPointRegistry
     {
         $registry = PickPointRegistry::find()
             ->where(['between', 'created_at', date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
@@ -73,6 +74,8 @@ class RegistryService
 
             $this->log->info($item, 'Новая запись реестра');
         }
+
+        return $registry;
     }
 
     /**
