@@ -89,6 +89,25 @@ class RegistryService
 
         /** @var PickPointRegistryItem $item */
         foreach ($items as $item) {
+            // Если отправление было зарегистрировано в PickPoint удаляем его там
+            if (PickPointRegistryItem::STATUSES['REGISTERED'] === $item->status) {
+                $invoice = [
+                    'IKN' => \Yii::$app->params['pickpoint']['ikn'],
+	                'GCInvoiceNumber' => $item->order->alt_number
+                ];
+
+                try {
+                    $this->pickPoint->cancelInvoice($invoice);
+                    $this->log->info($item, 'Удаление записи реестра в PickPoint');
+                } catch (\Throwable $exception) {
+                    $this->log->error($item, sprintf('Не удалось удалить запись реестра из PickPoint. Описание: %s',
+                        $exception->getMessage()
+                    ));
+
+                    continue;
+                }
+            }
+
             try {
                 $item->delete();
                 $this->log->info($item, 'Удаление записи реестра');
