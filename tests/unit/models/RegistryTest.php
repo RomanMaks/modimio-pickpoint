@@ -56,7 +56,7 @@ class RegistryTest extends Unit
                 'createRegistry' => function (array $sending) { return '123'; },
 
                 // Формирование этикеток в pdf
-                'makelabel' => function (array $invoices) { return '%PDFEND%'; },
+                'makeLabel' => function (array $invoices) { return '%PDFEND%'; },
 
                 // Удаление отправления
                 'cancelInvoice' => function(array $invoice) { return true; },

@@ -224,7 +224,7 @@ class PickPointAPIService
      * @throws InvalidResponseException
      * @throws FailedToFormLabelsException
      */
-    public function makelabel(array $invoices): string
+    public function makeLabel(array $invoices): string
     {
         $content = [
             'SessionId' => $this->sessionId,

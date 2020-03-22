@@ -279,7 +279,7 @@ class RegistryService
      */
     protected function labeling(int $registryId, array $invoices): string
     {
-        $file = $this->pickPoint->makelabel($invoices);
+        $file = $this->pickPoint->makeLabel($invoices);
 
         $filename = str_replace(
             ['%REGISTRY_NUMBER%', '%DATETIME%'],
