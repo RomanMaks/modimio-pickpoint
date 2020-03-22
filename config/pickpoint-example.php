@@ -12,5 +12,6 @@ return [
         'city' => 'Кострома',
         'region' => 'Костромской'
     ],
+    // Маска для имени файла PDF этикеток
     'fileNameMask' => 'registry_%REGISTRY_NUMBER%_%DATETIME%.pdf',
 ];
