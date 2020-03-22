@@ -12,6 +12,7 @@ modules:
     config:
         Yii2:
             configFile: 'config/test.php'
+            part: ORM
 
 # To enable code coverage:
 #coverage:

@@ -189,13 +189,13 @@ class PickPointAPIService
      *
      * @param array $sending
      *
-     * @return mixed
+     * @return string
      *
      * @throws InternalServerErrorException
      * @throws InvalidResponseException
      * @throws FailedToFormRegistryException
      */
-    public function createRegistry(array $sending)
+    public function createRegistry(array $sending): string
     {
         $response = $this->sendRequest(
             '/makereestrnumber',

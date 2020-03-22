@@ -2,6 +2,7 @@
 
 namespace app\controllers\Web\Actions\RegistryItem;
 
+use app\models\PickPointRegistryItem;
 use app\services\RegistryService;
 use yii\base\Action;
 
@@ -15,17 +16,21 @@ class Delete extends Action
 {
     /**
      * @return string
+     *
+     * @throws \Exception
      */
     public function run()
     {
         $ids = \Yii::$app->request->post('ids');
+
+        $items = PickPointRegistryItem::findAll(['id' => $ids]);
 
         $service = new RegistryService();
 
         $errors = [];
 
         try {
-            $service->deleteItems($ids);
+            $service->deleteItems($items);
         } catch (\Throwable $exception) {
             $errors[] = $exception->getMessage();
         }

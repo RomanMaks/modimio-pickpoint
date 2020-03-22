@@ -1,7 +1,11 @@
 {
     "name": "modimio/pickpoint",
     "description": "Modimio PickPoint",
-    "keywords": ["pickpoint", "api", "modimio"],
+    "keywords": [
+        "pickpoint",
+        "api",
+        "modimio"
+    ],
     "homepage": "http://www.yiiframework.com/",
     "type": "project",
     "license": "BSD-3-Clause",

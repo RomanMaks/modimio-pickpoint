@@ -1,6 +1,5 @@
 <?php
 
-
 namespace app\services;
 
 use app\models\Order;
@@ -81,12 +80,10 @@ class RegistryService
     /**
      * Удалить выбранные записи реестра
      *
-     * @param array $itemIds
+     * @param PickPointRegistryItem[] $items
      */
-    public function deleteItems(array $itemIds)
+    public function deleteItems(array $items)
     {
-        $items = PickPointRegistryItem::findAll(['id' => $itemIds]);
-
         /** @var PickPointRegistryItem $item */
         foreach ($items as $item) {
             // Если отправление было зарегистрировано в PickPoint удаляем его там
