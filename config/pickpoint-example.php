@@ -1,16 +1,16 @@
 <?php
 
 return [
-    'url' => 'https://e-solution.pickpoint.ru/apitest',
-    'login' => 'apitest',
-    'password' => 'apitest',
-    'ikn' => '9990003041',
+    'url' => '<URL на который необходимо отправлять запросы>',
+    'login' => '<Логин>',
+    'password' => '<Пароль>',
+    'ikn' => '<ИКН номер договора>',
     'out' => [
-        'postomat' => '4403-002',
+        'postomat' => '<Пункт сдачи, номер постамата>',
     ],
     'senderCity' => [
-        'city' => 'Кострома',
-        'region' => 'Костромской'
+        'city' => '<Название города сдачи отправления>',
+        'region' => '<Название региона сдачи отправления>'
     ],
     // Маска для имени файла PDF этикеток
     'fileNameMask' => 'registry_%REGISTRY_NUMBER%_%DATETIME%.pdf',

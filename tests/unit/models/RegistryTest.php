@@ -45,21 +45,16 @@ class RegistryTest extends Unit
             PickPointAPIService::class,
             [
                 // Регистрация отправлений
-                'createShipment' => function (array $sendings) use ($invoiceNumbers) {
-                    return [
-                        'created' => $invoiceNumbers,
-                        'rejected' => []
-                    ];
-                },
+                'createShipment' => ['created' => $invoiceNumbers, 'rejected' => []],
 
                 // Формирование реестра
-                'createRegistry' => function (array $sending) { return '123'; },
+                'createRegistry' => '123',
 
                 // Формирование этикеток в pdf
-                'makeLabel' => function (array $invoices) { return '%PDFEND%'; },
+                'makeLabel' => '%PDFEND%',
 
                 // Удаление отправления
-                'cancelInvoice' => function(array $invoice) { return true; },
+                'cancelInvoice' => true,
             ]
         );
 
@@ -70,9 +65,7 @@ class RegistryTest extends Unit
                 'log' => new RegistryItemLogService,
 
                 // Формирование этикеток
-                'labeling' => function (int $registryId, array $invoices) {
-                    return '/data/labels/registry.pdf';
-                }
+                'labeling' => '/data/labels/registry.pdf',
             ]
         );
     }
