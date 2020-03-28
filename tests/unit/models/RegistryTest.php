@@ -48,10 +48,7 @@ class RegistryTest extends Unit
                 'createShipment' => ['created' => $invoiceNumbers, 'rejected' => []],
 
                 // Формирование реестра
-                'createRegistry' => '123',
-
-                // Формирование этикеток в pdf
-                'makeLabel' => '%PDFEND%',
+                'makeRegistryNumber' => '1',
 
                 // Удаление отправления
                 'cancelInvoice' => true,

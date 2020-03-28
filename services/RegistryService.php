@@ -156,7 +156,7 @@ class RegistryService
 
         try {
             // Формирование реестра в ЛК PickPoint
-            $registry->registry_number = $this->pickPoint->createRegistry($sending);
+            $registry->registry_number = $this->pickPoint->makeRegistryNumber($sending);
             $registry->status = PickPointRegistry::STATUSES['READY_FOR_SHIPMENT'];
             $registry->label_print_link = $pathToLinks;
 

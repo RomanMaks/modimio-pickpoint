@@ -108,7 +108,7 @@ class PickPointAPIService
     {
         $session = Session::findOne(['service' => self::class]);
 
-        $this->sessionId = $this->getSession();
+        $this->sessionId = $this->login();
 
         if (empty($session)) {
             $session = new Session;
@@ -130,7 +130,7 @@ class PickPointAPIService
      * @throws InvalidResponseException
      * @throws LoginFailedException
      */
-    protected function getSession(): string
+    protected function login(): string
     {
         $content = [
             'Login' => \Yii::$app->params['pickpoint']['login'] ?? '',
@@ -195,12 +195,11 @@ class PickPointAPIService
      * @throws InvalidResponseException
      * @throws FailedToFormRegistryException
      */
-    public function createRegistry(array $sending): string
+    public function makeRegistryNumber(array $sending): string
     {
-        $response = $this->sendRequest(
-            '/makereestrnumber',
-            array_merge(['SessionId' => $this->sessionId], $sending)
-        );
+        $content = array_merge(['SessionId' => $this->sessionId], $sending);
+
+        $response = $this->sendRequest('/makereestrnumber', $content);
 
         if (!empty($response->data['ErrorCode'])) {
             \Yii::error(
