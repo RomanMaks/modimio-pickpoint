@@ -7,6 +7,7 @@ use app\models\PickPointRegistry;
 use app\services\PickPointAPIService;
 use app\services\RegistryItemLogService;
 use app\services\RegistryService;
+use app\components\factory\FactoryHelper;
 use Codeception\Test\Unit;
 
 /**
@@ -26,9 +27,6 @@ class RegistryTest extends Unit
      */
     protected function createMockRegistryServiceForSuccess(): object
     {
-        // TODO: Необходимо переделать, сначало формировать заказы и
-        // TODO: коробки в заказах, а не брать данные из БД, использовать
-        // TODO: фикстуры для формирования записей
         $orders = Order::find()->all();
 
         $invoiceNumbers = array_map(
@@ -76,25 +74,18 @@ class RegistryTest extends Unit
      */
     public function testRecreateRegistry()
     {
-        // TODO: Хорошо бы использовать фикстуры
+        /** @var PickPointRegistry $registry */
+        $registry = FactoryHelper::factory(PickPointRegistry::class)
+            ->state('createRegisteredRegistryWithRegisteredItem')
+            ->create();
+
         $registryService = $this->createMockRegistryServiceForSuccess();
 
-        // Создаем реестр
-        $registry = $registryService->create();
-
-        // Проверяем что реестр был создан
-        $this->assertNotEmpty($registry);
-
-        // Регистрируем отправления, получаем этикетки на них, регистрируем реестр
-        $registryService->registration($registry);
-
-        // Проверяем что реестр успешно зарегистрирован
-        $this->assertTrue(PickPointRegistry::STATUSES['READY_FOR_SHIPMENT'] === $registry->status);
-
+        // Удаляем из реестра отправления
         $registryService->deleteItems($registry->items);
-
         $registry->refresh();
 
+        // Приверяем что у реестра нет зарегистрированных отправлений
         $this->assertEmpty($registry->items);
 
         // Создаем новый реестр
